@@ -84,8 +84,8 @@ public class MazePoint {
         g.drawRect(xStart, yStart, scale, scale);
 
         for (Direction side : sides) {
-            Vec2 dirVec = Vec2.fromDirection(side);
-            Vec2 multVec = dirVec.multiply(new Vec2(halfScale, halfScale));
+            Vec2 dirVec = Vec2.fromDirection(side).multiply(new Vec2(-1, -1));
+            Vec2 multVec = Vec2.fromDirection(side).multiply(new Vec2(halfScale, halfScale));
             int xDir = multVec.getX();
             int yDir = multVec.getY();
 
@@ -104,11 +104,14 @@ public class MazePoint {
 
             g.setColor(Color.cyan);
 
-            int xLineStart = xStart + halfScale + start.getX() + dirVec.getX() * padding;
-            int yLineStart = yStart + halfScale + start.getY() + dirVec.getY() * padding;
+            int xPadding = dirVec.getX() * padding;
+            int yPadding = dirVec.getY() * padding;
 
-            int xLineEnd = xStart + halfScale + end.getX() + dirVec.getX() * padding;
-            int yLineEnd = yStart + halfScale + end.getY() + dirVec.getY() * padding;
+            int xLineStart = xStart + halfScale + start.getX() + xPadding;
+            int yLineStart = yStart + halfScale + start.getY() + yPadding;
+
+            int xLineEnd = xStart + halfScale + end.getX() + xPadding;
+            int yLineEnd = yStart + halfScale + end.getY() + yPadding;
 
             g.drawLine(xLineStart, yLineStart, xLineEnd, yLineEnd);
         }
