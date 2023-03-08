@@ -6,7 +6,15 @@ import me.sshcrack.labyrinth.path.MazePoint;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 public class Matrix {
+    private static Random r = Main.random;
+
     public static boolean inBounds(Vec2 point) {
         int xL = Main.DIM;
         int yL = Main.DIM;
@@ -18,7 +26,10 @@ public class Matrix {
     }
 
     @Nullable
-    public static MazePoint getNeighbour(MazePoint[][] maze, @NotNull MazePoint point, @NotNull Direction dir) {
+    public static MazePoint getNeighbour(MazePoint[][] maze, @NotNull MazePoint point, @Nullable Direction dir) {
+        if(dir == null)
+            return null;
+
         Vec2 newPos = getNeighbourCoords(point, dir);
         if(newPos == null)
                 return null;
@@ -36,5 +47,34 @@ public class Matrix {
             return null;
 
         return newPos;
+    }
+
+    @Nullable
+    public static Direction getRandomSide(MazePoint point) {
+        return getRandomSide(point, (d) -> true);
+    }
+
+
+    @Nullable
+    public static Direction getRandomSide(MazePoint point, Function<Direction, Boolean> sideValid) {
+        // Cloning
+        List<Direction> sides = new ArrayList<>(point.getFaces());
+        Direction side = null;
+        while (sides.size() != 0) {
+
+            int index = r.nextInt(sides.size());
+            Direction rand = sides.get(index);
+
+            if (Matrix.getNeighbourCoords(point, rand) == null || !sideValid.apply(rand)) {
+                // Invalid neighbour
+                sides.remove(index);
+                continue;
+            }
+
+            side = rand;
+            break;
+        }
+
+        return side;
     }
 }

@@ -16,9 +16,9 @@ public class Vec2Dir {
         Vec2 res = null;
         switch (dir) {
             case LEFT -> res = new Vec2(-1, 0);
-            case TOP -> res = new Vec2(0, -1);
+            case UP -> res = new Vec2(0, -1);
             case RIGHT -> res = new Vec2(1, 0);
-            case BOTTOM -> res = new Vec2(0, 1);
+            case DOWN -> res = new Vec2(0, 1);
         }
 
         return res;
@@ -33,7 +33,7 @@ public class Vec2Dir {
                 res1 = new Vec2(0, 0);
                 res2 = new Vec2(0, -1);
             }
-            case TOP -> {
+            case UP -> {
                 res1 = new Vec2(0, -1);
                 res2 = new Vec2(1, -1);
             }
@@ -41,7 +41,7 @@ public class Vec2Dir {
                 res1 = new Vec2(1, -1);
                 res2 = new Vec2(1, 0);
             }
-            case BOTTOM -> {
+            case DOWN -> {
                 res1 = new Vec2(0, 0);
                 res2 = new Vec2(1, 0);
             }

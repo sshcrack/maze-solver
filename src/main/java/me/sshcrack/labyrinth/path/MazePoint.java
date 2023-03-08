@@ -3,21 +3,20 @@ package me.sshcrack.labyrinth.path;
 import me.sshcrack.labyrinth.Main;
 import me.sshcrack.labyrinth.math.Matrix;
 import me.sshcrack.labyrinth.math.Vec2;
-import org.jgrapht.alg.util.Pair;
+import me.sshcrack.labyrinth.paint.DrawUtil;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MazePoint {
+public class MazePoint implements Cloneable{
     private final int x;
     private final int y;
-    private Color color = Color.WHITE;
 
-    private List<Direction> sides = getAvailableSides();
+    private Color color;
+    private List<Direction> faces;
 
     private List<Direction> getAvailableSides() {
         Vec2 pos = this.getPosition();
@@ -29,9 +28,19 @@ public class MazePoint {
                 .collect(Collectors.toList());
     }
 
+
+    public MazePoint(int x, int y, Color color, List<Direction> faces) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.faces = faces;
+    }
+
     public MazePoint(int x, int y) {
         this.x = x;
         this.y = y;
+        this.faces = getAvailableSides();
+        this.color = Color.WHITE;
     }
 
     public int getX() {
@@ -46,34 +55,42 @@ public class MazePoint {
         return new Vec2(this.x, this.y);
     }
 
-    public void setSides(Direction... sides) {
-        this.sides = Arrays.stream(sides).toList();
+    public void setFaces(Direction... faces) {
+        this.faces = Arrays.stream(faces).toList();
+    }
+    public void setFaces(List<Direction> sides) {
+        this.faces = sides;
     }
 
-
-    public void setSides(List<Direction> sides) {
-        this.sides = sides;
+    public boolean hasAllFaces() {
+        return this.faces.size() == Direction.values().length;
     }
 
-    public List<Direction> getSides() {
-        return sides;
+    public List<Direction> getFaces() {
+        return faces;
     }
 
-    public boolean hasSide(Direction dir) {
-        return sides.stream().anyMatch(e -> e == dir);
+    public boolean hasFace(Direction dir) {
+        return faces.stream().anyMatch(e -> e == dir);
     }
 
-    public void draw(Graphics g, int xOffset, int yOffset) {
-        draw(g, xOffset, yOffset, this.color);
+    public void addFace(Direction dir) {
+        if(this.faces.stream().noneMatch(e -> e.compareTo(dir) == 0)) {
+            ArrayList<Direction> e=  new ArrayList<>(this.faces);
+            e.add(dir);
+
+            this.faces = e;
+        }
     }
 
-    public void draw(Graphics g, int xOffset, int yOffset, Color c) {
+    public void drawDebug(Graphics g, int xOffset, int yOffset) {
+        drawDebug(g, xOffset, yOffset, this.color);
+    }
+
+    public void drawDebug(Graphics g, int xOffset, int yOffset, Color c) {
         int scale = Main.RES;
         int diameter = 5;
         int padding = 8;
-
-        int halfScale = scale / 2;
-        int quarterScale = scale / 4;
 
         int centered = (int) (((double) scale / 2) - ((double) diameter / 2));
         int xStart = xOffset + x * scale;
@@ -83,37 +100,41 @@ public class MazePoint {
         g.drawOval(xStart + centered, yStart + centered, diameter, diameter);
         g.drawRect(xStart, yStart, scale, scale);
 
-        for (Direction side : sides) {
-            Vec2 dirVec = Vec2.fromDirection(side).multiply(new Vec2(-1, -1));
-            Vec2 multVec = Vec2.fromDirection(side).multiply(new Vec2(halfScale, halfScale));
-            int xDir = multVec.getX();
-            int yDir = multVec.getY();
+        for (Direction side : faces) {
+            DrawUtil.drawDirection(Color.cyan, g, side, scale, padding, xStart, yStart);
+        }
+    }
 
-            Vec2 start = multVec.clone();
-            Vec2 end = multVec.clone();
+    public void draw(MazePoint[][] maze, Graphics g, int xOffset, int yOffset) {
+        draw(maze, g, xOffset, yOffset, this.color);
+    }
 
-            if (yDir == 0) {
-                start = start.add(new Vec2(0, -quarterScale));
-                end = end.add(new Vec2(0, quarterScale));
-            }
+    public void draw(MazePoint[][] maze, Graphics g, int xOffset, int yOffset, Color c) {
+        int scale = Main.RES;
+        int diameter = 5;
 
-            if (xDir == 0) {
-                start = start.add(new Vec2(-quarterScale, 0));
-                end = end.add(new Vec2(quarterScale, 0));
-            }
+        int xStart = xOffset + x * scale;
+        int yStart = yOffset + y * scale;
 
-            g.setColor(Color.cyan);
+        int centered = (int) (((double) scale / 2) - ((double) diameter / 2));
+        g.setColor(c);
+        g.drawOval(xStart + centered, yStart + centered, diameter, diameter);
 
-            int xPadding = dirVec.getX() * padding;
-            int yPadding = dirVec.getY() * padding;
+        List<Direction> toDraw = Arrays.stream(Direction.values()).filter(e -> {
+            MazePoint n = Matrix.getNeighbour(maze, this, e);
+            if(n == null)
+                return true;
 
-            int xLineStart = xStart + halfScale + start.getX() + xPadding;
-            int yLineStart = yStart + halfScale + start.getY() + yPadding;
+            if(n.getFaces().stream().anyMatch(x -> x.opposite().compareTo(e) == 0) && !n.hasAllFaces())
+                return false;
+            if(this.getFaces().stream().anyMatch(x -> x.compareTo(e) == 0))
+                return false;
 
-            int xLineEnd = xStart + halfScale + end.getX() + xPadding;
-            int yLineEnd = yStart + halfScale + end.getY() + yPadding;
-
-            g.drawLine(xLineStart, yLineStart, xLineEnd, yLineEnd);
+            return true;
+        })
+        .collect(Collectors.toList());
+        for (Direction side : toDraw) {
+            DrawUtil.drawDirection(Color.white, g, side, scale, 0, xStart, yStart);
         }
     }
 
@@ -131,7 +152,12 @@ public class MazePoint {
         return "MazePoint{" +
                 "x=" + x +
                 ", y=" + y +
-                ", sides=" + sides +
+                ", faces=" + faces +
                 '}';
+    }
+
+    @Override
+    public MazePoint clone() {
+        return new MazePoint(x, y, color, faces);
     }
 }
