@@ -3,24 +3,16 @@ package me.sshcrack.labyrinth.generator;
 import me.sshcrack.labyrinth.Main;
 import me.sshcrack.labyrinth.math.Matrix;
 import me.sshcrack.labyrinth.math.PointMath;
-import me.sshcrack.labyrinth.math.Vec2;
 import me.sshcrack.labyrinth.path.Direction;
 import me.sshcrack.labyrinth.path.MazePoint;
 import org.jetbrains.annotations.NotNull;
 
-import javax.print.attribute.standard.Sides;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class Branches {
-    private static Random r = Main.random;
-
-    public static List<MazePoint> generate(MazePoint[][] maze, List<MazePoint> mainPath) {
+    public static List<MazePoint> generate(MazePoint[][] maze, List<MazePoint> mainPath) throws InterruptedException {
         ArrayList<MazePoint> modified = new ArrayList<>(mainPath);
         MazePoint[][] outsides = new MazePoint[Main.DIM][Main.DIM];
         for (int x = 0; x < maze.length; x++) {
@@ -38,11 +30,9 @@ public class Branches {
 
             MazePoint outsidePoint = outsides[x][y];
             PointMath.addOutsideFaces(outsides, outsidePoint);
-            //System.out.printf("%s", outsidePoint);
 
             for (Direction face : outsidePoint.getFaces()) {
                 MazePoint neighbour = Matrix.getNeighbour(maze, outsidePoint, face);
-                //System.out.printf("%s -> %s", outsidePoint, face);
                 if(neighbour == null)
                     continue;
 
@@ -53,7 +43,6 @@ public class Branches {
                     point.addFace(face);
                 else
                     point.setFaces(face);
-                //System.out.println("Got neighbour");
                 neighbour.setColor(Color.WHITE);
                 generateBranch(maze, neighbour, connected, mainPath, modified);
                 i++;
@@ -74,7 +63,7 @@ public class Branches {
         return !connected[x][y];
     }
 
-    private static void generateBranch(MazePoint[][] maze, @NotNull MazePoint branchStart, boolean[][] connected, List<MazePoint> immutablePath, List<MazePoint> modified) {
+    private static void generateBranch(MazePoint[][] maze, @NotNull MazePoint branchStart, boolean[][] connected, List<MazePoint> immutablePath, List<MazePoint> modified) throws InterruptedException {
         Direction currFace = Matrix.getRandomSide(branchStart);
         boolean[][] visited = new boolean[Main.DIM][Main.DIM];
 
@@ -83,7 +72,7 @@ public class Branches {
 
         modified.add(branchStart);
         MazePoint lastPoint = branchStart;
-        while(true) {
+        while(!Thread.currentThread().isInterrupted()) {
             boolean isValid = isValidStep(lastPoint, connected);
             //System.out.printf("%s %s\n", lastPoint, currFace);
             if(!isValid)
@@ -117,16 +106,16 @@ public class Branches {
             lastPoint.setFaces(currFace);
             lastPoint = next;
             visited[x][y] = true;
+            MazeGeneratorThreaded.fireUpdate(10);
             modified.add(next);
         }
 
         lastPoint.setColor(Color.MAGENTA);
         MazePoint connectTo = Matrix.getNeighbour(maze, lastPoint, currFace);
-        //System.out.printf("connect to %s -> %s |%s|\n", lastPoint, connectTo, currFace);
         if(connectTo != null) {
             int x = lastPoint.getX();
             int y = lastPoint.getY();
-            boolean shouldConnect = r.nextDouble() < Main.CONNECT_PROBABILITY;
+            boolean shouldConnect = Main.random.nextDouble() < Main.CONNECT_PROBABILITY;
             if(shouldConnect) {
                 if(connected[x][y])
                     lastPoint.addFace(currFace);
@@ -139,7 +128,5 @@ public class Branches {
 
             connected[x][y] = true;
         }
-
-        //System.out.println("done");
     }
 }

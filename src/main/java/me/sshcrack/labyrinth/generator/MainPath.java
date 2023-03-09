@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class MainPath {
-    public static List<MazePoint> get(MazePoint[][] maze, MazePoint start, MazePoint end) {
+    public static List<MazePoint> get(MazePoint[][] maze, MazePoint start, MazePoint end) throws InterruptedException {
         System.out.println("Getting main path...");
         ArrayList<MazePoint> path = new ArrayList<>();
 
@@ -27,7 +27,7 @@ public class MainPath {
         // Sides mean the point and where a way should be connected to. Neighbour should not have the opposite face.
 
         Supplier<Boolean> inEnd = () -> path.get(path.size() -1).isEqual(end);
-        while (!inEnd.get()) {
+        while (!inEnd.get() && !Thread.currentThread().isInterrupted()) {
             MazePoint lastItem = path.get(path.size() - 1);
             MazePointD d = null;
             MazePoint next = null;
@@ -45,7 +45,7 @@ public class MainPath {
                 List<Direction> temp = lastItem.getFaces();
                 lastItem.setFaces(side);
 
-                d = ShortestPath.getPath(maze, start, end, false);
+                d = ShortestPath.getPath(maze, start, end, false, true);
                 if(d == null) {
                     lastItem.setFaces(temp);
                     continue;

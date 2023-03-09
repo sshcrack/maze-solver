@@ -1,63 +1,82 @@
 package me.sshcrack.labyrinth.paint;
 
 import me.sshcrack.labyrinth.Main;
-import me.sshcrack.labyrinth.generator.MazeGenerator;
-import me.sshcrack.labyrinth.math.ShortestPath;
 import me.sshcrack.labyrinth.path.MazePoint;
-import me.sshcrack.labyrinth.path.MazePointD;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.Rectangle2D;
+import java.util.List;
 
-public class MazePanel extends JPanel implements KeyListener {
+public class MazePanel extends JComponent {
     private final int xOffset;
     private final int yOffset;
     private final int PADDING = 5;
 
+
+    public Dimension getPreferredSize( ) {
+        int size = Main.DIM * Main.RES + PADDING;
+        int w = size + xOffset;
+        int h = size + yOffset;
+
+        System.out.printf("Preferred size is %s %s \n", w, h);
+        return new Dimension(w, h);
+    }
+
+
     public MazePanel(int x, int y) {
         super();
 
+        System.out.println(this.getLocation());
         this.xOffset = x + PADDING;
         this.yOffset = y + PADDING;
-        int size = Main.DIM * Main.RES + PADDING;
-
-        setPreferredSize(new Dimension(size + xOffset, size + yOffset));
-        setFocusable(true);
-        requestFocusInWindow();
     }
 
     @Override
     public void paintComponent(Graphics g) {
         this.setBackground(Color.BLACK);
-/*
-        boolean generated = Main.graphics != null;
-        Main.graphics = g;
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, Main.DIM * Main.RES, Main.DIM * Main.RES);
+        if(Main.thread == null || Main.thread.getMaze() == null) {
+            String text = "Generating maze...";
+            Font font = g.getFont();
 
-        if(!generated) {
-            MazeGenerator.generateMaze(Main.maze);
+            font = new Font(font.getFontName(), font.getStyle(), 40);
+            g.setFont(font);
+
+            FontRenderContext context = new FontRenderContext(font.getTransform(), false, false);
+            Rectangle2D bounds = font.getStringBounds(text, context);
+
+            g.setColor(Color.WHITE);
+            int w = (int) bounds.getWidth() /2;
+            int h = (int) bounds.getHeight() /2;
+            int halfScale = Main.DIM * Main.RES / 2;
+
+            g.drawString(text, halfScale - w, halfScale -h);
+
+            if(Main.thread == null )
+                Main.startGeneratorThread();
+            return;
         }
-*/
-        MazePoint[][] maze = Main.maze;
+
+
+        MazePoint[][] maze = Main.thread.getMaze();
         for (MazePoint[] mazePoints : maze) {
             for (MazePoint point : mazePoints) {
                 point.draw(maze, g, xOffset, yOffset);
-                //point.drawDebug(g, xOffset, yOffset);
             }
         }
 
 
-        MazePointD solved = ShortestPath.getPath(maze, Main.start, Main.end, false);
-        if(solved == null) {
-            System.err.println("Could not solve maze.");
+        List<MazePoint> solved = Main.thread.getSolved();
+        if(solved == null)
             return;
-        }
 
         MazePoint prev = null;
         int s = Main.RES;
         int center = s / 2;
-        for (MazePoint point : solved.toPath(maze)) {
+        for (MazePoint point : solved) {
             int startX = point.getX();
             int startY = point.getY();
             int endX = point.getX();
@@ -71,20 +90,5 @@ public class MazePanel extends JPanel implements KeyListener {
             g.setColor(Color.YELLOW);
             g.drawLine(startX * s +xOffset + center, startY *s +yOffset + center, endX *s +xOffset + center, endY *s + yOffset + center);
         }
-
-        for (MazePoint point : solved.toPath(maze)) {
-            point.setColor(Color.yellow);
-        }
     }
-
-    @Override
-    public void keyReleased(KeyEvent e) {}
-    @Override
-    public void keyTyped(KeyEvent e) {}
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        Main.instance.generateMaze();
-    }
-
 }

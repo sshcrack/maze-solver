@@ -1,17 +1,12 @@
 package me.sshcrack.labyrinth.generator;
 
 import me.sshcrack.labyrinth.Main;
-import me.sshcrack.labyrinth.math.ShortestPath;
 import me.sshcrack.labyrinth.path.MazePoint;
-import me.sshcrack.labyrinth.path.MazePointD;
 
 import java.awt.*;
 import java.util.List;
-import java.util.Random;
 
 public class MazeGenerator {
-    private static final Random r = Main.random;
-
     public static MazePoint[][] fillMaze(int dim) {
         MazePoint[][] maze = new MazePoint[dim][dim];
         for (int x = 0; x < dim; x++) {
@@ -26,7 +21,7 @@ public class MazeGenerator {
         return maze;
     }
 
-    public static void generateMaze(MazePoint[][] maze) {
+    public static void generateMaze(MazePoint[][] maze) throws InterruptedException {
         List<MazePoint> mainPath = MainPath.get(maze, Main.start, Main.end);
 
         for (MazePoint mazePoint : mainPath) {
@@ -37,7 +32,12 @@ public class MazeGenerator {
         Main.start.setColor(Color.GREEN);
         Main.end.setColor(Color.RED);
 
-        Branches.generate(maze, Branches.generate(maze, mainPath));
+        List<MazePoint> immutable = mainPath;
+        while(immutable.size() < Main.DIM * Main.DIM && !Thread.currentThread().isInterrupted()) {
+            immutable = Branches.generate(maze, immutable);
+            MazeGeneratorThreaded.fireUpdate();
+        }
+
     }
 
 

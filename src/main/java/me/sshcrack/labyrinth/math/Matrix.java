@@ -13,8 +13,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Matrix {
-    private static Random r = Main.random;
-
     public static boolean inBounds(Vec2 point) {
         int xL = Main.DIM;
         int yL = Main.DIM;
@@ -62,7 +60,7 @@ public class Matrix {
         Direction side = null;
         while (sides.size() != 0) {
 
-            int index = r.nextInt(sides.size());
+            int index = Main.random.nextInt(sides.size());
             Direction rand = sides.get(index);
 
             if (Matrix.getNeighbourCoords(point, rand) == null || !sideValid.apply(rand)) {

@@ -142,6 +142,9 @@ public class MazePoint implements Cloneable{
         this.color = c;
     }
 
+    public Color getColor() {
+        return color;
+    }
 
     public boolean isEqual(MazePoint other) {
         return this.x == other.getX() && this.y == other.getY();
